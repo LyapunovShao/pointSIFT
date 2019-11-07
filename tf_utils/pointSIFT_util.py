@@ -70,7 +70,7 @@ def pointSIFT_group_four_with_idx(xyz, idx, points, use_xyz=True):
 
 def pointSIFT_module(xyz, points, radius, out_channel, is_training, bn_decay, scope='point_sift', bn=True, use_xyz=True, use_nchw=False):
     data_format = 'NCHW' if use_nchw else 'NHWC'
-    with tf.variable_scope(scope) as sc:
+    with tf.compat.v1.variable_scope(scope) as sc:
         # Grouping
         new_xyz, new_points, idx, grouped_xyz = pointSIFT_group(radius, xyz, points, use_xyz)
 
@@ -95,7 +95,7 @@ def pointSIFT_module(xyz, points, radius, out_channel, is_training, bn_decay, sc
 
 def pointSIFT_res_module(xyz, points, radius, out_channel, is_training, bn_decay, scope='point_sift', bn=True, use_xyz=True, same_dim=False, merge='add'):
     data_format = 'NHWC'
-    with tf.variable_scope(scope) as sc:
+    with tf.compat.v1.variable_scope(scope) as sc:
         # conv1
         _, new_points, idx, _ = pointSIFT_group(radius, xyz, points, use_xyz=use_xyz)
 
@@ -229,7 +229,7 @@ def pointnet_sa_module(xyz, points, npoint, radius, nsample, mlp, mlp2, group_al
             idx: (batch_size, npoint, nsample) int32 -- indices for local regions
     '''
     data_format = 'NCHW' if use_nchw else 'NHWC'
-    with tf.variable_scope(scope) as sc:
+    with tf.compat.v1.variable_scope(scope) as sc:
         # Sample and Grouping
         if group_all:
             nsample = xyz.get_shape()[1].value
@@ -249,7 +249,7 @@ def pointnet_sa_module(xyz, points, npoint, radius, nsample, mlp, mlp2, group_al
 
         # Pooling in Local Regions
         if pooling == 'max':
-            new_points = tf.reduce_max(new_points, axis=[2], keep_dims=True, name='maxpool')
+            new_points = tf.compat.v1.reduce_max(new_points, axis=[2], keep_dims=True, name='maxpool')
         elif pooling == 'avg':
             new_points = tf.reduce_mean(new_points, axis=[2], keep_dims=True, name='avgpool')
         elif pooling == 'weighted_avg':
@@ -335,10 +335,10 @@ def pointnet_fp_module(xyz1, xyz2, points1, points2, mlp, is_training, bn_decay,
         Return:
             new_points: (batch_size, ndataset1, mlp[-1]) TF tensor
     '''
-    with tf.variable_scope(scope) as sc:
+    with tf.compat.v1.variable_scope(scope) as sc:
         dist, idx = three_nn(xyz1, xyz2)
         dist = tf.maximum(dist, 1e-10)
-        norm = tf.reduce_sum((1.0 / dist), axis=2, keep_dims=True)
+        norm = tf.compat.v1.reduce_sum((1.0 / dist), axis=2, keep_dims=True)
         norm = tf.tile(norm, [1, 1, 3])
         weight = (1.0 / dist) / norm
         interpolated_points = three_interpolate(points2, idx, weight)

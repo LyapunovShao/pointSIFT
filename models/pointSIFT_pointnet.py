@@ -7,9 +7,9 @@ from tf_utils.pointSIFT_util import pointSIFT_module, pointSIFT_res_module, poin
 
 
 def placeholder_inputs(batch_size, num_point):
-    pointclouds_pl = tf.placeholder(tf.float32, shape=(batch_size, num_point, 3))
-    labels_pl = tf.placeholder(tf.int32, shape=(batch_size, num_point))
-    smpws_pl = tf.placeholder(tf.float32, shape=(batch_size, num_point))
+    pointclouds_pl = tf.compat.v1.placeholder(tf.float32, shape=(batch_size, num_point, 3))
+    labels_pl = tf.compat.v1.placeholder(tf.int32, shape=(batch_size, num_point))
+    smpws_pl = tf.compat.v1.placeholder(tf.float32, shape=(batch_size, num_point))
     return pointclouds_pl, labels_pl, smpws_pl
 
 
@@ -69,7 +69,7 @@ def get_loss(pred, label, smpw):
     :param smpw: BxN
     :return:
     """
-    classify_loss = tf.losses.sparse_softmax_cross_entropy(labels=label, logits=pred, weights=smpw)
+    classify_loss = tf.compat.v1.losses.sparse_softmax_cross_entropy(labels=label, logits=pred, weights=smpw)
     tf.summary.scalar('classify loss', classify_loss)
-    tf.add_to_collection('losses', classify_loss)
+    tf.compat.v1.add_to_collection('losses', classify_loss)
     return classify_loss

@@ -91,7 +91,7 @@ class SegTrainer(object):
         print('train size %d and test size %d' % (self.train_sz, self.test_sz))
 
     def get_learning_rate(self):
-        learning_rate = tf.train.exponential_decay(LEARNING_RATE,
+        learning_rate = tf.compat.v1.train.exponential_decay(LEARNING_RATE,
                                                    self.batch * BATCH_SZ,
                                                    DECAY_STEP,
                                                    DECAY_RATE,
@@ -101,7 +101,7 @@ class SegTrainer(object):
         return learning_rate
 
     def get_bn_decay(self):
-        bn_momentum = tf.train.exponential_decay(BN_INIT_DECAY,
+        bn_momentum = tf.compat.v1.train.exponential_decay(BN_INIT_DECAY,
                                                  self.batch * BATCH_SZ,
                                                  BN_DECAY_DECAY_STEP,
                                                  BN_DECAY_DECAY_RATE,
@@ -159,9 +159,9 @@ class SegTrainer(object):
     def build_g_cpu(self):
         self.batch = tf.Variable(0, name='batch', trainable=False)
         self.point_pl, self.label_pl, self.smpws_pl = SEG_MODEL.placeholder_inputs(self.batch_sz, self.point_sz)
-        self.is_train_pl = tf.placeholder(dtype=tf.bool, shape=())
-        self.ave_tp_pl = tf.placeholder(dtype=tf.float32, shape=())
-        self.optimizer = tf.train.AdamOptimizer(self.get_learning_rate())
+        self.is_train_pl = tf.compat.v1.placeholder(dtype=tf.bool, shape=())
+        self.ave_tp_pl = tf.compat.v1.placeholder(dtype=tf.float32, shape=())
+        self.optimizer = tf.compat.v1.train.AdamOptimizer(self.get_learning_rate())
         self.bn_decay = self.get_bn_decay()
 
         SEG_MODEL.get_model(self.point_pl, self.is_train_pl, num_class=NUM_CLASS, bn_decay=self.bn_decay)
@@ -176,7 +176,7 @@ class SegTrainer(object):
             net, end_point = SEG_MODEL.get_model(point_cloud_slice, self.is_train_pl, num_class=NUM_CLASS,
                                                  bn_decay=self.bn_decay)
             SEG_MODEL.get_loss(net, label_slice, smpw=smpws_slice)
-            loss = tf.get_collection('losses', scope=scope)
+            loss = tf.compat.v1.get_collection('losses', scope=scope)
             total_loss = tf.add_n(loss, name='total_loss')
             for _i in loss + [total_loss]:
                 tf.summary.scalar(_i.op.name, _i)
@@ -194,7 +194,7 @@ class SegTrainer(object):
             self.total_loss_gpu_list = []
 
             for i in range(GPU_NUM):
-                with tf.variable_scope(tf.get_variable_scope(), reuse=True):
+                with tf.compat.v1.variable_scope(tf.compat.v1.get_variable_scope(), reuse=True):
                     self.build_g_gpu(i)
 
             self.net = tf.concat(self.net_gpu, axis=0)
@@ -213,20 +213,20 @@ class SegTrainer(object):
         with tf.Graph().as_default():
             self.build_graph()
             # merge operator (for tensorboard)
-            merged = tf.summary.merge_all()
+            merged = tf.compat.v1.summary.merge([tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES,'total_loss')])
             iter_in_epoch = self.train_sz // self.batch_sz
-            saver = tf.train.Saver()
+            saver = tf.compat.v1.train.Saver()
 
             # Create a session
-            config = tf.ConfigProto()
+            config = tf.compat.v1.ConfigProto()
             config.gpu_options.allow_growth = True
             config.allow_soft_placement = True
             config.log_device_placement = False
             best_acc = 0.0
-            with tf.Session(config=config) as sess:
-                train_writer = tf.summary.FileWriter(TRAIN_LOG_PATH, sess.graph)
-                evaluate_writer = tf.summary.FileWriter(TEST_LOG_PATH, sess.graph)
-                sess.run(tf.global_variables_initializer())
+            with tf.compat.v1.Session(config=config) as sess:
+                train_writer = tf.compat.v1.summary.FileWriter(TRAIN_LOG_PATH, sess.graph)
+                evaluate_writer = tf.compat.v1.summary.FileWriter(TEST_LOG_PATH, sess.graph)
+                sess.run(tf.compat.v1.global_variables_initializer())
                 epoch_sz = MAX_EPOCH
                 tic = time.time()
                 for epoch in range(epoch_sz):
